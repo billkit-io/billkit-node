@@ -9,7 +9,11 @@ describe("SchemaClient", () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
-        const rawResponseBody = { errors: [{ field: "field", message: "message" }], valid: true };
+        const rawResponseBody = {
+            errors: [{ field: "field", message: "message" }],
+            valid: true,
+            warnings: [{ field: "field", message: "message" }],
+        };
 
         server.mockEndpoint().put("/schema").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
 
@@ -47,7 +51,11 @@ describe("SchemaClient", () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
-        const rawResponseBody = { errors: [{ field: "field", message: "message" }], valid: true };
+        const rawResponseBody = {
+            errors: [{ field: "field", message: "message" }],
+            valid: true,
+            warnings: [{ field: "field", message: "message" }],
+        };
 
         server.mockEndpoint().post("/schema/validate").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
 

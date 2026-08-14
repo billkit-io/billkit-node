@@ -8,4 +8,5 @@ import type * as BillkitApi from "../index.js";
 export interface ValidationErrorResponse {
     errors?: BillkitApi.ValidationError[] | undefined;
     valid: boolean;
+    warnings?: BillkitApi.ValidationWarning[] | undefined;
 }
