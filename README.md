@@ -1,7 +1,7 @@
 # Billkit TypeScript Library
 
 [![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-Built%20with%20Fern-brightgreen)](https://buildwithfern.com?utm_source=github&utm_medium=github&utm_campaign=readme&utm_source=https%3A%2F%2Fgithub.com%2Fbillkit-io%2Fbillkit-node)
-[![npm shield](https://img.shields.io/npm/v/)](https://www.npmjs.com/package/)
+[![npm shield](https://img.shields.io/npm/v/@billkit-io/billkit)](https://www.npmjs.com/package/@billkit-io/billkit)
 
 The Billkit TypeScript library provides convenient access to the Billkit APIs from TypeScript.
 
@@ -28,7 +28,7 @@ The Billkit TypeScript library provides convenient access to the Billkit APIs fr
 ## Installation
 
 ```sh
-npm i -s 
+npm i -s @billkit-io/billkit
 ```
 
 ## Reference
@@ -40,7 +40,7 @@ A full reference for this library is available [here](https://github.com/billkit
 Instantiate and use the client with the following:
 
 ```typescript
-import { BillkitApiClient } from "";
+import { BillkitApiClient } from "@billkit-io/billkit";
 
 const client = new BillkitApiClient({ baseUrl: "YOUR_BASE_URL", apiKey: "YOUR_API_KEY" });
 await client.addons.attachAddon({
@@ -55,7 +55,7 @@ The SDK exports all request and response types as TypeScript interfaces. Simply 
 following namespace:
 
 ```typescript
-import { BillkitApi } from "BillkitApi";
+import { BillkitApi } from "@billkit-io/billkit";
 
 const request: BillkitApi.AttachAddonRequest = {
     ...
@@ -68,7 +68,7 @@ When the API returns a non-success status code (4xx or 5xx response), a subclass
 will be thrown.
 
 ```typescript
-import { BillkitApiError } from "BillkitApi";
+import { BillkitApiError } from "@billkit-io/billkit";
 
 try {
     await client.addons.attachAddon(...);
@@ -89,7 +89,7 @@ try {
 This SDK supports direct imports of subpackage clients, which allows JavaScript bundlers to tree-shake and include only the imported subpackage code. This results in much smaller bundle sizes.
 
 ```typescript
-import { AddonsClient } from 'BillkitApi/addons';
+import { AddonsClient } from '@billkit-io/billkit/addons';
 
 const client = new AddonsClient({...});
 ```
@@ -99,7 +99,7 @@ const client = new AddonsClient({...});
 If you would like to send additional headers as part of the request, use the `headers` request option.
 
 ```typescript
-import { BillkitApiClient } from "BillkitApi";
+import { BillkitApiClient } from "@billkit-io/billkit";
 
 const client = new BillkitApiClient({
     ...
@@ -194,7 +194,7 @@ console.log(rawResponse.headers['X-My-Header']);
 The SDK supports logging. You can configure the logger by passing in a `logging` object to the client options.
 
 ```typescript
-import { BillkitApiClient, logging } from "BillkitApi";
+import { BillkitApiClient, logging } from "@billkit-io/billkit";
 
 const client = new BillkitApiClient({
     ...
