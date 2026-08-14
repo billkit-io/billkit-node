@@ -1,0 +1,191 @@
+{
+    "name": "",
+    "version": "0.0.3",
+    "private": false,
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/billkit-io/billkit-node.git"
+    },
+    "license": "MIT",
+    "type": "commonjs",
+    "main": "./dist/cjs/index.js",
+    "module": "./dist/esm/index.mjs",
+    "types": "./dist/cjs/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/esm/index.d.mts",
+                "default": "./dist/esm/index.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/index.d.ts",
+                "default": "./dist/cjs/index.js"
+            },
+            "default": "./dist/cjs/index.js"
+        },
+        "./addons": {
+            "import": {
+                "types": "./dist/esm/api/resources/addons/exports.d.mts",
+                "default": "./dist/esm/api/resources/addons/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/addons/exports.d.ts",
+                "default": "./dist/cjs/api/resources/addons/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/addons/exports.js"
+        },
+        "./assignments": {
+            "import": {
+                "types": "./dist/esm/api/resources/assignments/exports.d.mts",
+                "default": "./dist/esm/api/resources/assignments/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/assignments/exports.d.ts",
+                "default": "./dist/cjs/api/resources/assignments/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/assignments/exports.js"
+        },
+        "./billing": {
+            "import": {
+                "types": "./dist/esm/api/resources/billing/exports.d.mts",
+                "default": "./dist/esm/api/resources/billing/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/billing/exports.d.ts",
+                "default": "./dist/cjs/api/resources/billing/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/billing/exports.js"
+        },
+        "./entitlements": {
+            "import": {
+                "types": "./dist/esm/api/resources/entitlements/exports.d.mts",
+                "default": "./dist/esm/api/resources/entitlements/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/entitlements/exports.d.ts",
+                "default": "./dist/cjs/api/resources/entitlements/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/entitlements/exports.js"
+        },
+        "./contracts": {
+            "import": {
+                "types": "./dist/esm/api/resources/contracts/exports.d.mts",
+                "default": "./dist/esm/api/resources/contracts/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/contracts/exports.d.ts",
+                "default": "./dist/cjs/api/resources/contracts/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/contracts/exports.js"
+        },
+        "./invoices": {
+            "import": {
+                "types": "./dist/esm/api/resources/invoices/exports.d.mts",
+                "default": "./dist/esm/api/resources/invoices/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/invoices/exports.d.ts",
+                "default": "./dist/cjs/api/resources/invoices/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/invoices/exports.js"
+        },
+        "./apiKeys": {
+            "import": {
+                "types": "./dist/esm/api/resources/apiKeys/exports.d.mts",
+                "default": "./dist/esm/api/resources/apiKeys/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/apiKeys/exports.d.ts",
+                "default": "./dist/cjs/api/resources/apiKeys/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/apiKeys/exports.js"
+        },
+        "./pricing": {
+            "import": {
+                "types": "./dist/esm/api/resources/pricing/exports.d.mts",
+                "default": "./dist/esm/api/resources/pricing/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/pricing/exports.d.ts",
+                "default": "./dist/cjs/api/resources/pricing/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/pricing/exports.js"
+        },
+        "./schema": {
+            "import": {
+                "types": "./dist/esm/api/resources/schema/exports.d.mts",
+                "default": "./dist/esm/api/resources/schema/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/schema/exports.d.ts",
+                "default": "./dist/cjs/api/resources/schema/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/schema/exports.js"
+        },
+        "./subjects": {
+            "import": {
+                "types": "./dist/esm/api/resources/subjects/exports.d.mts",
+                "default": "./dist/esm/api/resources/subjects/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/subjects/exports.d.ts",
+                "default": "./dist/cjs/api/resources/subjects/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/subjects/exports.js"
+        },
+        "./tenants": {
+            "import": {
+                "types": "./dist/esm/api/resources/tenants/exports.d.mts",
+                "default": "./dist/esm/api/resources/tenants/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/tenants/exports.d.ts",
+                "default": "./dist/cjs/api/resources/tenants/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/tenants/exports.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist",
+        "reference.md",
+        "README.md",
+        "LICENSE"
+    ],
+    "scripts": {
+        "format": "biome format --write --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+        "format:check": "biome format --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+        "lint": "biome lint --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+        "lint:fix": "biome lint --fix --unsafe --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+        "check": "biome check --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+        "check:fix": "biome check --fix --unsafe --skip-parse-errors --no-errors-on-unmatched --max-diagnostics=none",
+        "build": "pnpm build:cjs && pnpm build:esm",
+        "build:cjs": "tsc --project ./tsconfig.cjs.json",
+        "build:esm": "tsc --project ./tsconfig.esm.json && node scripts/rename-to-esm-files.js dist/esm",
+        "test": "vitest",
+        "test:unit": "vitest --project unit",
+        "test:wire": "vitest --project wire"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "webpack": "^5.105.4",
+        "ts-loader": "^9.5.4",
+        "vitest": "^4.1.1",
+        "msw": "2.11.2",
+        "@types/node": "^20.0.0",
+        "typescript": "~5.9.3",
+        "@biomejs/biome": "2.4.10"
+    },
+    "browser": {
+        "fs": false,
+        "os": false,
+        "path": false,
+        "stream": false,
+        "crypto": false
+    },
+    "packageManager": "pnpm@10.33.0",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "sideEffects": false
+}
