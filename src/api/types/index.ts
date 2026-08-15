@@ -49,3 +49,4 @@ export * from "./TenantMeResponse.js";
 export * from "./UsageResponse.js";
 export * from "./ValidationError.js";
 export * from "./ValidationErrorResponse.js";
+export * from "./ValidationWarning.js";
