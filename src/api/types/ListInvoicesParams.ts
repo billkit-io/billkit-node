@@ -4,11 +4,24 @@
  * Query parameters for `GET /invoices`.
  */
 export interface ListInvoicesParams {
-    /** Filter: only include invoices with billing_period_start <= end_date. */
+    /** Pagination: opaque cursor from a previous response's `next_cursor` field. */
+    cursor?: (string | null) | undefined;
+    /**
+     * Filter: only include invoices with billing_period_start <= end_date.
+     * Must be a valid RFC 3339 timestamp; an unparseable value returns 400.
+     */
     end_date?: (string | null) | undefined;
-    /** Filter: only include invoices with billing_period_end >= start_date. */
+    /** Pagination: maximum number of items to return per page (1–1000, default 100). */
+    limit?: (number | null) | undefined;
+    /**
+     * Filter: only include invoices with billing_period_end >= start_date.
+     * Must be a valid RFC 3339 timestamp; an unparseable value returns 400.
+     */
     start_date?: (string | null) | undefined;
-    /** Filter by invoice status (e.g., "open", "paid", "past_due", "uncollectible"). */
+    /**
+     * Filter by invoice status. Must be one of "open", "paid", "past_due",
+     * "payment_failed", or "uncollectible"; any other value returns 400.
+     */
     status?: (string | null) | undefined;
     /** Filter by subject ID. */
     subject_id?: (string | null) | undefined;

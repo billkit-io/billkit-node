@@ -6,6 +6,9 @@ import type * as BillkitApi from "../index.js";
  * Response body for `GET /invoices`.
  */
 export interface ListInvoicesResponse {
+    /** Whether more results exist beyond this page. */
+    has_more: boolean;
     invoices: BillkitApi.InvoiceListItem[];
-    total: number;
+    /** Opaque cursor for the next page. Null/absent on the last page. */
+    next_cursor?: (string | null) | undefined;
 }

@@ -34,8 +34,11 @@ export class SubjectsClient {
      * - If no valid API key is provided: returns HTTP 401 (handled by auth middleware).
      * - If a DynamoDB failure occurs: returns HTTP 500.
      *
+     * @param {BillkitApi.ListSubjectsRequest} request
      * @param {SubjectsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -44,14 +47,21 @@ export class SubjectsClient {
      *     await client.subjects.listSubjects()
      */
     public listSubjects(
+        request: BillkitApi.ListSubjectsRequest = {},
         requestOptions?: SubjectsClient.RequestOptions,
     ): core.HttpResponsePromise<BillkitApi.SubjectsResponse> {
-        return core.HttpResponsePromise.fromPromise(this.__listSubjects(requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__listSubjects(request, requestOptions));
     }
 
     private async __listSubjects(
+        request: BillkitApi.ListSubjectsRequest = {},
         requestOptions?: SubjectsClient.RequestOptions,
     ): Promise<core.WithRawResponse<BillkitApi.SubjectsResponse>> {
+        const { limit, cursor } = request;
+        const _queryParams: Record<string, unknown> = {
+            limit,
+            cursor,
+        };
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
         const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
             _authRequest.headers,
@@ -66,7 +76,11 @@ export class SubjectsClient {
             ),
             method: "GET",
             headers: _headers,
-            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            queryString: core.url
+                .queryBuilder()
+                .addMany(_queryParams)
+                .mergeAdditional(requestOptions?.queryParams)
+                .build(),
             timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
             maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
@@ -79,6 +93,10 @@ export class SubjectsClient {
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 400:
+                    throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
                     throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
                 default:
@@ -101,8 +119,14 @@ export class SubjectsClient {
      * If the subject already exists (re-registration), updates the Stripe Customer's
      * email/name rather than creating a duplicate.
      *
+     * `plan_key` is validated against the tenant's schema, mirroring `POST /assignments`:
+     * - If `plan_key` is provided but does not exist in the schema: returns 422.
+     * - If `plan_key` is omitted, it defaults to the schema's `default_plan` (not the
+     *   literal string `"free"`). If the schema defines no `default_plan`: returns 422.
+     * - If the tenant has no schema uploaded at all: returns 422.
+     *
      * - If subject_id is missing or too long: returns 400.
-     * - If the subject already exists: updates email/name/Stripe Customer (idempotent).
+     * - If the subject already exists: updates email/name/plan_key/Stripe Customer (idempotent).
      * - If no Stripe Connect account is active: subject is stored without Stripe Customer.
      * - If Stripe API fails: returns 502 (subject is NOT partially created).
      * - On success: returns 201 (new) or 200 (re-registration).
@@ -111,6 +135,8 @@ export class SubjectsClient {
      * @param {SubjectsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.UnprocessableEntityError}
      * @throws {@link BillkitApi.BadGatewayError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -163,6 +189,13 @@ export class SubjectsClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 422:
+                    throw new BillkitApi.UnprocessableEntityError(
+                        _response.error.body as unknown,
+                        _response.rawResponse,
+                    );
                 case 502:
                     throw new BillkitApi.BadGatewayError(_response.error.body as unknown, _response.rawResponse);
                 default:
@@ -189,6 +222,7 @@ export class SubjectsClient {
      * @param {SubjectsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
      *
@@ -242,6 +276,8 @@ export class SubjectsClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 default:
                     throw new errors.BillkitApiError({
                         statusCode: _response.error.statusCode,
@@ -264,6 +300,7 @@ export class SubjectsClient {
      * @param {BillkitApi.GetSubjectRequest} request
      * @param {SubjectsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.NotFoundError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
@@ -313,6 +350,8 @@ export class SubjectsClient {
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 404:
                     throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
                 case 500:

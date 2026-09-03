@@ -25,18 +25,118 @@ export class InvoicesClient {
     }
 
     /**
-     * Lists end-user invoices for the authenticated tenant with optional filtering
-     * by subject_id, status, and date range.
+     * Lists invoice-failure markers for the authenticated tenant, most recent
+     * failure first, with optional filtering by `subject_id` and `exhausted`.
+     * Supports cursor-based pagination.
      *
      * Query parameters:
      * - `subject_id` — filter by subject
-     * - `status` — filter by invoice status (open, paid, past_due, uncollectible)
-     * - `start_date` — ISO 8601 datetime; only invoices overlapping this date or later
-     * - `end_date` — ISO 8601 datetime; only invoices overlapping this date or earlier
+     * - `exhausted` — `true`/`false` to filter by retry-budget status
+     * - `limit` — maximum number of items per page (1–1000, default 100)
+     * - `cursor` — opaque pagination cursor from a previous response
+     *
+     * @param {BillkitApi.ListInvoiceFailuresRequest} request
+     * @param {InvoicesClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.InternalServerError}
+     * @throws {@link errors.BillkitApiError}
+     * @throws {@link errors.BillkitApiTimeoutError}
+     *
+     * @example
+     *     await client.invoices.listInvoiceFailures()
+     */
+    public listInvoiceFailures(
+        request: BillkitApi.ListInvoiceFailuresRequest = {},
+        requestOptions?: InvoicesClient.RequestOptions,
+    ): core.HttpResponsePromise<BillkitApi.ListInvoiceFailuresResponse> {
+        return core.HttpResponsePromise.fromPromise(this.__listInvoiceFailures(request, requestOptions));
+    }
+
+    private async __listInvoiceFailures(
+        request: BillkitApi.ListInvoiceFailuresRequest = {},
+        requestOptions?: InvoicesClient.RequestOptions,
+    ): Promise<core.WithRawResponse<BillkitApi.ListInvoiceFailuresResponse>> {
+        const { subject_id: subjectId, exhausted, limit, cursor } = request;
+        const _queryParams: Record<string, unknown> = {
+            subject_id: subjectId,
+            exhausted,
+            limit,
+            cursor,
+        };
+        const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
+        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+            _authRequest.headers,
+            this._options?.headers,
+            requestOptions?.headers,
+        );
+        const _response = await core.fetcher({
+            url: core.url.join(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)),
+                "invoice-failures",
+            ),
+            method: "GET",
+            headers: _headers,
+            queryString: core.url
+                .queryBuilder()
+                .addMany(_queryParams)
+                .mergeAdditional(requestOptions?.queryParams)
+                .build(),
+            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+            fetchFn: this._options?.fetch,
+            logging: this._options.logging,
+        });
+        if (_response.ok) {
+            return {
+                data: _response.body as BillkitApi.ListInvoiceFailuresResponse,
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 400:
+                    throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 500:
+                    throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
+                default:
+                    throw new errors.BillkitApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/invoice-failures");
+    }
+
+    /**
+     * Lists end-user invoices for the authenticated tenant with optional filtering
+     * by subject_id, status, and date range. Supports cursor-based pagination.
+     *
+     * Query parameters:
+     * - `subject_id` — filter by subject
+     * - `status` — filter by invoice status (open, paid, past_due, uncollectible).
+     *   Any other value is rejected with a 400.
+     * - `start_date` — RFC 3339 datetime; only invoices overlapping this date or later.
+     *   Must be a valid RFC 3339 timestamp, or the request is rejected with a 400.
+     * - `end_date` — RFC 3339 datetime; only invoices overlapping this date or earlier.
+     *   Must be a valid RFC 3339 timestamp, or the request is rejected with a 400.
+     * - `limit` — maximum number of items per page (1–1000, default 100)
+     * - `cursor` — opaque pagination cursor from a previous response
      *
      * @param {BillkitApi.ListInvoicesRequest} request
      * @param {InvoicesClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -55,12 +155,14 @@ export class InvoicesClient {
         request: BillkitApi.ListInvoicesRequest = {},
         requestOptions?: InvoicesClient.RequestOptions,
     ): Promise<core.WithRawResponse<BillkitApi.ListInvoicesResponse>> {
-        const { subject_id: subjectId, status, start_date: startDate, end_date: endDate } = request;
+        const { subject_id: subjectId, status, start_date: startDate, end_date: endDate, limit, cursor } = request;
         const _queryParams: Record<string, unknown> = {
             subject_id: subjectId,
             status,
             start_date: startDate,
             end_date: endDate,
+            limit,
+            cursor,
         };
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
         const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
@@ -93,6 +195,10 @@ export class InvoicesClient {
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 400:
+                    throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
                     throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
                 default:
@@ -108,6 +214,145 @@ export class InvoicesClient {
     }
 
     /**
+     * Lists Billkit's platform invoices for the authenticated tenant (charges from
+     * Billkit to the tenant). Returns all platform invoices sorted by `created_at`
+     * descending (most recent first).
+     *
+     * Platform invoices are bounded (~12-24 per year) so no pagination is needed.
+     *
+     * @param {InvoicesClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.InternalServerError}
+     * @throws {@link errors.BillkitApiError}
+     * @throws {@link errors.BillkitApiTimeoutError}
+     *
+     * @example
+     *     await client.invoices.listPlatformInvoices()
+     */
+    public listPlatformInvoices(
+        requestOptions?: InvoicesClient.RequestOptions,
+    ): core.HttpResponsePromise<BillkitApi.ListPlatformInvoicesResponse> {
+        return core.HttpResponsePromise.fromPromise(this.__listPlatformInvoices(requestOptions));
+    }
+
+    private async __listPlatformInvoices(
+        requestOptions?: InvoicesClient.RequestOptions,
+    ): Promise<core.WithRawResponse<BillkitApi.ListPlatformInvoicesResponse>> {
+        const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
+        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+            _authRequest.headers,
+            this._options?.headers,
+            requestOptions?.headers,
+        );
+        const _response = await core.fetcher({
+            url: core.url.join(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)),
+                "invoices/platform",
+            ),
+            method: "GET",
+            headers: _headers,
+            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+            fetchFn: this._options?.fetch,
+            logging: this._options.logging,
+        });
+        if (_response.ok) {
+            return {
+                data: _response.body as BillkitApi.ListPlatformInvoicesResponse,
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 500:
+                    throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
+                default:
+                    throw new errors.BillkitApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/invoices/platform");
+    }
+
+    /**
+     * Aggregates revenue metrics from all end-user invoices for the authenticated
+     * tenant. Returns totals and a month-over-month breakdown grouped by
+     * `billing_period_end`.
+     *
+     * @param {InvoicesClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.InternalServerError}
+     * @throws {@link errors.BillkitApiError}
+     * @throws {@link errors.BillkitApiTimeoutError}
+     *
+     * @example
+     *     await client.invoices.getRevenue()
+     */
+    public getRevenue(
+        requestOptions?: InvoicesClient.RequestOptions,
+    ): core.HttpResponsePromise<BillkitApi.RevenueResponse> {
+        return core.HttpResponsePromise.fromPromise(this.__getRevenue(requestOptions));
+    }
+
+    private async __getRevenue(
+        requestOptions?: InvoicesClient.RequestOptions,
+    ): Promise<core.WithRawResponse<BillkitApi.RevenueResponse>> {
+        const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
+        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+            _authRequest.headers,
+            this._options?.headers,
+            requestOptions?.headers,
+        );
+        const _response = await core.fetcher({
+            url: core.url.join(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)),
+                "invoices/revenue",
+            ),
+            method: "GET",
+            headers: _headers,
+            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+            fetchFn: this._options?.fetch,
+            logging: this._options.logging,
+        });
+        if (_response.ok) {
+            return { data: _response.body as BillkitApi.RevenueResponse, rawResponse: _response.rawResponse };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 500:
+                    throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
+                default:
+                    throw new errors.BillkitApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/invoices/revenue");
+    }
+
+    /**
      * Calculates what the next invoice would look like for a subject based on
      * their current usage, plan assignment, and schema billing configuration.
      *
@@ -119,6 +364,7 @@ export class InvoicesClient {
      * @param {BillkitApi.PreviewInvoiceRequest} request
      * @param {InvoicesClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.NotFoundError}
      * @throws {@link BillkitApi.UnprocessableEntityError}
      * @throws {@link BillkitApi.InternalServerError}
@@ -169,6 +415,8 @@ export class InvoicesClient {
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 404:
                     throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
                 case 422:

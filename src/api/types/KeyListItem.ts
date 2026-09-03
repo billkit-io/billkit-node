@@ -2,11 +2,15 @@
 
 /**
  * A single API key in the list response (key is masked).
+ *
+ * Note: there is intentionally no `last_used_at` field. Tracking key usage
+ * requires a throttled write on the auth hot path (see #230) and is deferred
+ * post-MVP — the field was previously always `None`/absent, which is worse
+ * than not advertising it at all.
  */
 export interface KeyListItem {
     created_at: string;
     key_id: string;
-    last_used_at?: (string | null) | undefined;
     name: string;
     prefix: string;
 }

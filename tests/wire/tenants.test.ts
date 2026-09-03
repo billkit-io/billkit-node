@@ -13,6 +13,7 @@ describe("TenantsClient", () => {
             created_at: "created_at",
             org_id: "org_id",
             plan_key: "plan_key",
+            stripe_customer_id: "stripe_customer_id",
             tenant_id: "tenant_id",
         };
 
@@ -28,6 +29,19 @@ describe("TenantsClient", () => {
 
         const rawResponseBody = { key: "value" };
 
+        server.mockEndpoint().get("/tenants/me").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.tenants.getTenantMe();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("get_tenant_me (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
         server.mockEndpoint().get("/tenants/me").respondWith().statusCode(404).jsonBody(rawResponseBody).build();
 
         await expect(async () => {
@@ -35,7 +49,7 @@ describe("TenantsClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("get_tenant_me (3)", async () => {
+    test("get_tenant_me (4)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 

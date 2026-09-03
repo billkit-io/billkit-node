@@ -28,12 +28,18 @@ export class SchemaClient {
      * Retrieves the tenant's own schema document from the store.
      * Tenant is resolved from `X-Api-Key` via the auth middleware.
      *
-     * - If the tenant has a schema: returns 200 with the schema document body (as stored).
+     * Accepts an optional `?format=yaml` or `?format=json` query parameter.
+     * Defaults to JSON (the canonical storage format). When `yaml` is requested,
+     * the stored JSON is converted to YAML before returning.
+     *
+     * - If the tenant has a schema: returns 200 with the schema document body.
      * - If the tenant has no schema: returns 404 with `{ "error": "schema not found" }`.
      * - If a store error occurs: returns 500 with `{ "error": "internal error" }`.
      *
+     * @param {BillkitApi.GetSchemaRequest} request
      * @param {SchemaClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.NotFoundError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
@@ -42,11 +48,21 @@ export class SchemaClient {
      * @example
      *     await client.schema.getSchema()
      */
-    public getSchema(requestOptions?: SchemaClient.RequestOptions): core.HttpResponsePromise<string> {
-        return core.HttpResponsePromise.fromPromise(this.__getSchema(requestOptions));
+    public getSchema(
+        request: BillkitApi.GetSchemaRequest = {},
+        requestOptions?: SchemaClient.RequestOptions,
+    ): core.HttpResponsePromise<string> {
+        return core.HttpResponsePromise.fromPromise(this.__getSchema(request, requestOptions));
     }
 
-    private async __getSchema(requestOptions?: SchemaClient.RequestOptions): Promise<core.WithRawResponse<string>> {
+    private async __getSchema(
+        request: BillkitApi.GetSchemaRequest = {},
+        requestOptions?: SchemaClient.RequestOptions,
+    ): Promise<core.WithRawResponse<string>> {
+        const { format } = request;
+        const _queryParams: Record<string, unknown> = {
+            format: format !== undefined ? format : undefined,
+        };
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
         const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
             _authRequest.headers,
@@ -61,7 +77,11 @@ export class SchemaClient {
             ),
             method: "GET",
             headers: _headers,
-            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            queryString: core.url
+                .queryBuilder()
+                .addMany(_queryParams)
+                .mergeAdditional(requestOptions?.queryParams)
+                .build(),
             responseType: "text",
             timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
             maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
@@ -75,6 +95,8 @@ export class SchemaClient {
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 404:
                     throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
@@ -95,14 +117,27 @@ export class SchemaClient {
      * Validates, persists to store, and invalidates all tenant cache entries.
      * Tenant is resolved from `X-Api-Key` via the auth middleware.
      *
+     * Before persisting, the new document is checked for referential integrity
+     * against the tenant's existing subject assignments: if any assignment
+     * references a `plan_key`, `contract_key`, or add-on key that would no
+     * longer exist in the new document, the upload is rejected (422) so that
+     * assignments never silently go stale. Pass `?force=true` to bypass this
+     * check and persist anyway (e.g. when reassigning affected subjects out of
+     * band).
+     *
      * - If the body is empty: returns 400.
      * - If the document has validation errors: returns 200 with `{ "valid": false, "errors": [...] }` (not persisted).
+     * - If persisting would orphan subject assignments and `force` is not set: returns 422 with `{ "valid": false, "errors": [...] }` (not persisted).
      * - If the document is valid: persists to store, invalidates cache, returns 200 with `{ "valid": true, "errors": [] }`.
      * - If a store or cache error occurs: returns 500.
      *
+     * @param {BillkitApi.PutSchemaRequest} request
      * @param {SchemaClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.ForbiddenError}
+     * @throws {@link BillkitApi.UnprocessableEntityError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -111,14 +146,20 @@ export class SchemaClient {
      *     await client.schema.putSchema()
      */
     public putSchema(
+        request: BillkitApi.PutSchemaRequest = {},
         requestOptions?: SchemaClient.RequestOptions,
     ): core.HttpResponsePromise<BillkitApi.ValidationErrorResponse> {
-        return core.HttpResponsePromise.fromPromise(this.__putSchema(requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__putSchema(request, requestOptions));
     }
 
     private async __putSchema(
+        request: BillkitApi.PutSchemaRequest = {},
         requestOptions?: SchemaClient.RequestOptions,
     ): Promise<core.WithRawResponse<BillkitApi.ValidationErrorResponse>> {
+        const { force } = request;
+        const _queryParams: Record<string, unknown> = {
+            force,
+        };
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
         const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
             _authRequest.headers,
@@ -133,7 +174,11 @@ export class SchemaClient {
             ),
             method: "PUT",
             headers: _headers,
-            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            queryString: core.url
+                .queryBuilder()
+                .addMany(_queryParams)
+                .mergeAdditional(requestOptions?.queryParams)
+                .build(),
             timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
             maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
@@ -148,6 +193,15 @@ export class SchemaClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 403:
+                    throw new BillkitApi.ForbiddenError(_response.error.body as unknown, _response.rawResponse);
+                case 422:
+                    throw new BillkitApi.UnprocessableEntityError(
+                        _response.error.body as unknown,
+                        _response.rawResponse,
+                    );
                 case 500:
                     throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
                 default:
@@ -167,16 +221,23 @@ export class SchemaClient {
      * (structural + semantic), and returns a `ValidationErrorResponse` without
      * persisting anything.
      *
-     * - If the document is valid: returns 200 with `{ "valid": true, "errors": [] }`.
+     * Accepts an optional `?format=json` or `?format=yaml` query parameter.
+     * When provided and the schema is valid, the response includes a `document`
+     * field containing the schema serialized in the requested format.
+     * Defaults to no document in the response (backward-compatible).
+     *
+     * - If the document is valid: returns 200 with `{ "valid": true, "errors": [] }` (and optionally `"document": "..."`).
      * - If the document has validation errors: returns 200 with `{ "valid": false, "errors": [...] }`.
      * - If the body is empty: returns 400.
      *
      * This endpoint is protected by the auth middleware (X-Api-Key), but does not
      * use the tenant context since validation is stateless.
      *
+     * @param {BillkitApi.ValidateSchemaRequest} request
      * @param {SchemaClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
      *
@@ -184,14 +245,20 @@ export class SchemaClient {
      *     await client.schema.validateSchema()
      */
     public validateSchema(
+        request: BillkitApi.ValidateSchemaRequest = {},
         requestOptions?: SchemaClient.RequestOptions,
     ): core.HttpResponsePromise<BillkitApi.ValidationErrorResponse> {
-        return core.HttpResponsePromise.fromPromise(this.__validateSchema(requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__validateSchema(request, requestOptions));
     }
 
     private async __validateSchema(
+        request: BillkitApi.ValidateSchemaRequest = {},
         requestOptions?: SchemaClient.RequestOptions,
     ): Promise<core.WithRawResponse<BillkitApi.ValidationErrorResponse>> {
+        const { format } = request;
+        const _queryParams: Record<string, unknown> = {
+            format: format !== undefined ? format : undefined,
+        };
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
         const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
             _authRequest.headers,
@@ -206,7 +273,11 @@ export class SchemaClient {
             ),
             method: "POST",
             headers: _headers,
-            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            queryString: core.url
+                .queryBuilder()
+                .addMany(_queryParams)
+                .mergeAdditional(requestOptions?.queryParams)
+                .build(),
             timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
             maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
             abortSignal: requestOptions?.abortSignal,
@@ -221,6 +292,8 @@ export class SchemaClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 default:
                     throw new errors.BillkitApiError({
                         statusCode: _response.error.statusCode,

@@ -11,6 +11,7 @@ import { PricingClient } from "./api/resources/pricing/client/Client.js";
 import { SchemaClient } from "./api/resources/schema/client/Client.js";
 import { SubjectsClient } from "./api/resources/subjects/client/Client.js";
 import { TenantsClient } from "./api/resources/tenants/client/Client.js";
+import { UsageClient } from "./api/resources/usage/client/Client.js";
 import type { BaseClientOptions, BaseRequestOptions } from "./BaseClient.js";
 import { type NormalizedClientOptionsWithAuth, normalizeClientOptionsWithAuth } from "./BaseClient.js";
 import * as core from "./core/index.js";
@@ -33,6 +34,7 @@ export class BillkitApiClient {
     protected _pricing: PricingClient | undefined;
     protected _schema: SchemaClient | undefined;
     protected _subjects: SubjectsClient | undefined;
+    protected _usage: UsageClient | undefined;
     protected _tenants: TenantsClient | undefined;
 
     constructor(options: BillkitApiClient.Options) {
@@ -77,6 +79,10 @@ export class BillkitApiClient {
 
     public get subjects(): SubjectsClient {
         return (this._subjects ??= new SubjectsClient(this._options));
+    }
+
+    public get usage(): UsageClient {
+        return (this._usage ??= new UsageClient(this._options));
     }
 
     public get tenants(): TenantsClient {

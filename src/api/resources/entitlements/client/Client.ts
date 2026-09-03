@@ -40,7 +40,11 @@ export class EntitlementsClient {
      * @param {EntitlementsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.PaymentRequiredError}
      * @throws {@link BillkitApi.NotFoundError}
+     * @throws {@link BillkitApi.UnprocessableEntityError}
+     * @throws {@link BillkitApi.TooManyRequestsError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -94,8 +98,19 @@ export class EntitlementsClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 402:
+                    throw new BillkitApi.PaymentRequiredError(_response.error.body as unknown, _response.rawResponse);
                 case 404:
                     throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
+                case 422:
+                    throw new BillkitApi.UnprocessableEntityError(
+                        _response.error.body as unknown,
+                        _response.rawResponse,
+                    );
+                case 429:
+                    throw new BillkitApi.TooManyRequestsError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
                     throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
                 default:

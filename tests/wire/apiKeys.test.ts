@@ -10,15 +10,7 @@ describe("ApiKeysClient", () => {
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
         const rawResponseBody = {
-            keys: [
-                {
-                    created_at: "created_at",
-                    key_id: "key_id",
-                    last_used_at: "last_used_at",
-                    name: "name",
-                    prefix: "prefix",
-                },
-            ],
+            keys: [{ created_at: "created_at", key_id: "key_id", name: "name", prefix: "prefix" }],
         };
 
         server.mockEndpoint().get("/keys").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
@@ -28,6 +20,19 @@ describe("ApiKeysClient", () => {
     });
 
     test("list_keys (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/keys").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.apiKeys.listKeys();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("list_keys (3)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
@@ -101,6 +106,28 @@ describe("ApiKeysClient", () => {
             .post("/keys")
             .jsonBody(rawRequestBody)
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.apiKeys.createKey({
+                name: "name",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("create_key (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { name: "name" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/keys")
+            .jsonBody(rawRequestBody)
+            .respondWith()
             .statusCode(409)
             .jsonBody(rawResponseBody)
             .build();
@@ -112,7 +139,7 @@ describe("ApiKeysClient", () => {
         }).rejects.toThrow(BillkitApi.ConflictError);
     });
 
-    test("create_key (4)", async () => {
+    test("create_key (5)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { name: "name" };
@@ -152,6 +179,19 @@ describe("ApiKeysClient", () => {
 
         const rawResponseBody = { key: "value" };
 
+        server.mockEndpoint().post("/keys/rotate").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.apiKeys.rotateKey();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("rotate_key (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
         server.mockEndpoint().post("/keys/rotate").respondWith().statusCode(500).jsonBody(rawResponseBody).build();
 
         await expect(async () => {
@@ -163,15 +203,32 @@ describe("ApiKeysClient", () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
-        server.mockEndpoint().delete("/keys/key_id").respondWith().statusCode(200).build();
+        const rawResponseBody = { message: "message" };
+
+        server.mockEndpoint().delete("/keys/key_id").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
 
         const response = await client.apiKeys.deleteKey({
             key_id: "key_id",
         });
-        expect(response).toEqual(undefined);
+        expect(response).toEqual(rawResponseBody);
     });
 
     test("delete_key (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().delete("/keys/key_id").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.apiKeys.deleteKey({
+                key_id: "key_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("delete_key (3)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
@@ -186,7 +243,7 @@ describe("ApiKeysClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("delete_key (3)", async () => {
+    test("delete_key (4)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 

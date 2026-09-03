@@ -5,6 +5,144 @@ import { BillkitApiClient } from "../../src/Client";
 import { mockServerPool } from "../mock-server/MockServerPool";
 
 describe("BillingClient", () => {
+    test("change_plan (1)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key" };
+        const rawResponseBody = {
+            changed_at: "changed_at",
+            effective: "effective",
+            new_plan_key: "new_plan_key",
+            previous_plan_key: "previous_plan_key",
+            proration_charge_cents: 1000000,
+            subject_id: "subject_id",
+        };
+
+        server
+            .mockEndpoint()
+            .post("/billing/change-plan")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(200)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        const response = await client.billing.changePlan({
+            plan_key: "plan_key",
+        });
+        expect(response).toEqual(rawResponseBody);
+    });
+
+    test("change_plan (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/billing/change-plan")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(400)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.billing.changePlan({
+                plan_key: "plan_key",
+            });
+        }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("change_plan (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/billing/change-plan")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.billing.changePlan({
+                plan_key: "plan_key",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("change_plan (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/billing/change-plan")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(402)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.billing.changePlan({
+                plan_key: "plan_key",
+            });
+        }).rejects.toThrow(BillkitApi.PaymentRequiredError);
+    });
+
+    test("change_plan (5)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/billing/change-plan")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(404)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.billing.changePlan({
+                plan_key: "plan_key",
+            });
+        }).rejects.toThrow(BillkitApi.NotFoundError);
+    });
+
+    test("change_plan (6)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/billing/change-plan")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(500)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.billing.changePlan({
+                plan_key: "plan_key",
+            });
+        }).rejects.toThrow(BillkitApi.InternalServerError);
+    });
+
     test("create_portal_token (1)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
@@ -59,6 +197,28 @@ describe("BillingClient", () => {
             .post("/billing/portal-token")
             .jsonBody(rawRequestBody)
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.billing.createPortalToken({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("create_portal_token (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/billing/portal-token")
+            .jsonBody(rawRequestBody)
+            .respondWith()
             .statusCode(404)
             .jsonBody(rawResponseBody)
             .build();
@@ -70,7 +230,7 @@ describe("BillingClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("create_portal_token (4)", async () => {
+    test("create_portal_token (5)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { subject_id: "subject_id" };
@@ -89,6 +249,75 @@ describe("BillingClient", () => {
             return await client.billing.createPortalToken({
                 subject_id: "subject_id",
             });
+        }).rejects.toThrow(BillkitApi.InternalServerError);
+    });
+
+    test("portal_list_invoices (1)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = {
+            has_more: true,
+            invoices: [
+                {
+                    amount_cents: 1000000,
+                    billing_period_end: "billing_period_end",
+                    billing_period_start: "billing_period_start",
+                    created_at: "created_at",
+                    currency: "currency",
+                    invoice_id: "invoice_id",
+                    line_items: [{ amount_cents: 1000000, description: "description" }],
+                    paid_at: "paid_at",
+                    status: "status",
+                    stripe_invoice_id: "stripe_invoice_id",
+                    subject_id: "subject_id",
+                },
+            ],
+            next_cursor: "next_cursor",
+        };
+
+        server.mockEndpoint().get("/portal/invoices").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
+
+        const response = await client.billing.portalListInvoices();
+        expect(response).toEqual(rawResponseBody);
+    });
+
+    test("portal_list_invoices (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/portal/invoices").respondWith().statusCode(400).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.billing.portalListInvoices();
+        }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("portal_list_invoices (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/portal/invoices").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.billing.portalListInvoices();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("portal_list_invoices (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/portal/invoices").respondWith().statusCode(500).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.billing.portalListInvoices();
         }).rejects.toThrow(BillkitApi.InternalServerError);
     });
 });

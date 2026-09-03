@@ -40,6 +40,8 @@ export class AssignmentsClient {
      * @param {AssignmentsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.ForbiddenError}
      * @throws {@link BillkitApi.UnprocessableEntityError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
@@ -94,6 +96,10 @@ export class AssignmentsClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 403:
+                    throw new BillkitApi.ForbiddenError(_response.error.body as unknown, _response.rawResponse);
                 case 422:
                     throw new BillkitApi.UnprocessableEntityError(
                         _response.error.body as unknown,
@@ -120,11 +126,15 @@ export class AssignmentsClient {
      * - If subject_id is empty: returns 400.
      * - If a store error occurs: returns 500.
      * - On success: returns 204 No Content (regardless of whether the assignment existed).
+     *   The `max_subjects` self-metering counter is only decremented when an
+     *   assignment actually existed, so repeated or no-op deletes cannot drive
+     *   the counter negative.
      *
      * @param {BillkitApi.DeleteAssignmentRequest} request
      * @param {AssignmentsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -175,6 +185,8 @@ export class AssignmentsClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
                     throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
                 default:

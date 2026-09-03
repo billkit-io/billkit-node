@@ -30,6 +30,7 @@ export class ApiKeysClient {
      *
      * @param {ApiKeysClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -73,6 +74,8 @@ export class ApiKeysClient {
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
                     throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
                 default:
@@ -97,6 +100,7 @@ export class ApiKeysClient {
      * @param {ApiKeysClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.ConflictError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
@@ -150,6 +154,8 @@ export class ApiKeysClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 409:
                     throw new BillkitApi.ConflictError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
@@ -178,6 +184,7 @@ export class ApiKeysClient {
      *
      * @param {ApiKeysClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
      * @throws {@link errors.BillkitApiTimeoutError}
@@ -221,6 +228,8 @@ export class ApiKeysClient {
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
                     throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
                 default:
@@ -243,6 +252,7 @@ export class ApiKeysClient {
      * @param {BillkitApi.DeleteKeyRequest} request
      * @param {ApiKeysClient.RequestOptions} requestOptions - Request-specific configuration.
      *
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.NotFoundError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
@@ -256,14 +266,14 @@ export class ApiKeysClient {
     public deleteKey(
         request: BillkitApi.DeleteKeyRequest,
         requestOptions?: ApiKeysClient.RequestOptions,
-    ): core.HttpResponsePromise<void> {
+    ): core.HttpResponsePromise<BillkitApi.RevokeKeyResponse> {
         return core.HttpResponsePromise.fromPromise(this.__deleteKey(request, requestOptions));
     }
 
     private async __deleteKey(
         request: BillkitApi.DeleteKeyRequest,
         requestOptions?: ApiKeysClient.RequestOptions,
-    ): Promise<core.WithRawResponse<void>> {
+    ): Promise<core.WithRawResponse<BillkitApi.RevokeKeyResponse>> {
         const { key_id: keyId } = request;
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
         const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
@@ -287,11 +297,13 @@ export class ApiKeysClient {
             logging: this._options.logging,
         });
         if (_response.ok) {
-            return { data: undefined, rawResponse: _response.rawResponse };
+            return { data: _response.body as BillkitApi.RevokeKeyResponse, rawResponse: _response.rawResponse };
         }
 
         if (_response.error.reason === "status-code") {
             switch (_response.error.statusCode) {
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 404:
                     throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
                 case 500:

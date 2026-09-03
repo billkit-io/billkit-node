@@ -9,8 +9,12 @@ export interface ListInvoicesRequest {
     subject_id?: string;
     /** Filter by status (open, paid, past_due, uncollectible) */
     status?: string;
-    /** ISO 8601 start date filter */
+    /** RFC 3339 start date filter */
     start_date?: string;
-    /** ISO 8601 end date filter */
+    /** RFC 3339 end date filter */
     end_date?: string;
+    /** Maximum items per page (1–1000, default 100) */
+    limit?: number;
+    /** Opaque pagination cursor from previous response */
+    cursor?: string;
 }

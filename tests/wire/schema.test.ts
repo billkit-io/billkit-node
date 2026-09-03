@@ -40,6 +40,45 @@ describe("SchemaClient", () => {
 
         const rawResponseBody = { key: "value" };
 
+        server.mockEndpoint().put("/schema").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.schema.putSchema();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("put_schema (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().put("/schema").respondWith().statusCode(403).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.schema.putSchema();
+        }).rejects.toThrow(BillkitApi.ForbiddenError);
+    });
+
+    test("put_schema (5)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().put("/schema").respondWith().statusCode(422).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.schema.putSchema();
+        }).rejects.toThrow(BillkitApi.UnprocessableEntityError);
+    });
+
+    test("put_schema (6)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
         server.mockEndpoint().put("/schema").respondWith().statusCode(500).jsonBody(rawResponseBody).build();
 
         await expect(async () => {
@@ -74,5 +113,18 @@ describe("SchemaClient", () => {
         await expect(async () => {
             return await client.schema.validateSchema();
         }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("validate_schema (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().post("/schema/validate").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.schema.validateSchema();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
     });
 });

@@ -26,6 +26,120 @@ export class BillingClient {
     }
 
     /**
+     * Allows a portal-authenticated subject to switch their plan. This is the
+     * immediate-switch path only: it handles the case where billing is not configured
+     * in the schema, or where the old and new plan have equal prices (lateral move).
+     *
+     * Upgrade/downgrade branches (with proration math and Stripe charges) are
+     * implemented in a later task and will extend this handler.
+     *
+     * ## Authentication
+     * Requires portal JWT (Bearer token). The subject identity comes from
+     * the `PortalContext` extension (injected by `portal_auth_middleware`).
+     *
+     * ## Request Body
+     * ```json
+     * { "plan_key": "pro" }
+     * ```
+     *
+     * ## Response (200)
+     * ```json
+     * {
+     *   "subject_id": "user_123",
+     *   "previous_plan_key": "starter",
+     *   "new_plan_key": "pro",
+     *   "changed_at": "2024-01-15T12:30:00Z",
+     *   "effective": "immediate",
+     *   "proration_charge_cents": 0
+     * }
+     * ```
+     *
+     * ## Errors
+     * - 400: Empty `plan_key` or already on the requested plan
+     * - 401: Missing or invalid portal token
+     * - 404: Subject not found or plan key not in schema
+     * - 500: Internal error
+     *
+     * @param {BillkitApi.ChangePlanRequest} request
+     * @param {BillingClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.PaymentRequiredError}
+     * @throws {@link BillkitApi.NotFoundError}
+     * @throws {@link BillkitApi.InternalServerError}
+     * @throws {@link errors.BillkitApiError}
+     * @throws {@link errors.BillkitApiTimeoutError}
+     *
+     * @example
+     *     await client.billing.changePlan({
+     *         plan_key: "plan_key"
+     *     })
+     */
+    public changePlan(
+        request: BillkitApi.ChangePlanRequest,
+        requestOptions?: BillingClient.RequestOptions,
+    ): core.HttpResponsePromise<BillkitApi.ChangePlanResponse> {
+        return core.HttpResponsePromise.fromPromise(this.__changePlan(request, requestOptions));
+    }
+
+    private async __changePlan(
+        request: BillkitApi.ChangePlanRequest,
+        requestOptions?: BillingClient.RequestOptions,
+    ): Promise<core.WithRawResponse<BillkitApi.ChangePlanResponse>> {
+        const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
+        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+            _authRequest.headers,
+            this._options?.headers,
+            requestOptions?.headers,
+        );
+        const _response = await core.fetcher({
+            url: core.url.join(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)),
+                "billing/change-plan",
+            ),
+            method: "POST",
+            headers: _headers,
+            contentType: "application/json",
+            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            requestType: "json",
+            body: mergeAdditionalBodyParameters(request, requestOptions?.additionalBodyParameters),
+            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+            fetchFn: this._options?.fetch,
+            logging: this._options.logging,
+        });
+        if (_response.ok) {
+            return { data: _response.body as BillkitApi.ChangePlanResponse, rawResponse: _response.rawResponse };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 400:
+                    throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 402:
+                    throw new BillkitApi.PaymentRequiredError(_response.error.body as unknown, _response.rawResponse);
+                case 404:
+                    throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
+                case 500:
+                    throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
+                default:
+                    throw new errors.BillkitApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/billing/change-plan");
+    }
+
+    /**
      * Generates a signed JWT that grants a specific subject access to the hosted
      * billing portal. The token is scoped to both the tenant and the subject,
      * preventing cross-tenant or cross-subject access.
@@ -57,6 +171,7 @@ export class BillingClient {
      * @param {BillingClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.NotFoundError}
      * @throws {@link BillkitApi.InternalServerError}
      * @throws {@link errors.BillkitApiError}
@@ -110,6 +225,8 @@ export class BillingClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 404:
                     throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
                 case 500:
@@ -124,5 +241,93 @@ export class BillingClient {
         }
 
         return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/billing/portal-token");
+    }
+
+    /**
+     * Scoped to the subject identified in the portal token. Cannot see other subjects' invoices.
+     * Supports cursor-based pagination with portal-specific limits (default 50, max 200).
+     *
+     * Query parameters:
+     * - `limit` — maximum number of items per page (1–200, default 50)
+     * - `cursor` — opaque pagination cursor from a previous response
+     *
+     * @param {BillkitApi.PortalListInvoicesRequest} request
+     * @param {BillingClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.InternalServerError}
+     * @throws {@link errors.BillkitApiError}
+     * @throws {@link errors.BillkitApiTimeoutError}
+     *
+     * @example
+     *     await client.billing.portalListInvoices()
+     */
+    public portalListInvoices(
+        request: BillkitApi.PortalListInvoicesRequest = {},
+        requestOptions?: BillingClient.RequestOptions,
+    ): core.HttpResponsePromise<BillkitApi.PortalListInvoicesResponse> {
+        return core.HttpResponsePromise.fromPromise(this.__portalListInvoices(request, requestOptions));
+    }
+
+    private async __portalListInvoices(
+        request: BillkitApi.PortalListInvoicesRequest = {},
+        requestOptions?: BillingClient.RequestOptions,
+    ): Promise<core.WithRawResponse<BillkitApi.PortalListInvoicesResponse>> {
+        const { limit, cursor } = request;
+        const _queryParams: Record<string, unknown> = {
+            limit,
+            cursor,
+        };
+        const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
+        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+            _authRequest.headers,
+            this._options?.headers,
+            requestOptions?.headers,
+        );
+        const _response = await core.fetcher({
+            url: core.url.join(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)),
+                "portal/invoices",
+            ),
+            method: "GET",
+            headers: _headers,
+            queryString: core.url
+                .queryBuilder()
+                .addMany(_queryParams)
+                .mergeAdditional(requestOptions?.queryParams)
+                .build(),
+            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+            fetchFn: this._options?.fetch,
+            logging: this._options.logging,
+        });
+        if (_response.ok) {
+            return {
+                data: _response.body as BillkitApi.PortalListInvoicesResponse,
+                rawResponse: _response.rawResponse,
+            };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 400:
+                    throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 500:
+                    throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
+                default:
+                    throw new errors.BillkitApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        return handleNonStatusCodeError(_response.error, _response.rawResponse, "GET", "/portal/invoices");
     }
 }

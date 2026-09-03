@@ -61,6 +61,29 @@ describe("ContractsClient", () => {
             .post("/contracts")
             .jsonBody(rawRequestBody)
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.contracts.applyContract({
+                contract_key: "contract_key",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("apply_contract (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { contract_key: "contract_key", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/contracts")
+            .jsonBody(rawRequestBody)
+            .respondWith()
             .statusCode(404)
             .jsonBody(rawResponseBody)
             .build();
@@ -73,7 +96,7 @@ describe("ContractsClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("apply_contract (4)", async () => {
+    test("apply_contract (5)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { contract_key: "contract_key", subject_id: "subject_id" };
@@ -96,7 +119,7 @@ describe("ContractsClient", () => {
         }).rejects.toThrow(BillkitApi.UnprocessableEntityError);
     });
 
-    test("apply_contract (5)", async () => {
+    test("apply_contract (6)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { contract_key: "contract_key", subject_id: "subject_id" };
@@ -114,6 +137,102 @@ describe("ContractsClient", () => {
         await expect(async () => {
             return await client.contracts.applyContract({
                 contract_key: "contract_key",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.InternalServerError);
+    });
+
+    test("detach_contract (1)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        server.mockEndpoint().delete("/subjects/subject_id/contract").respondWith().statusCode(200).build();
+
+        const response = await client.contracts.detachContract({
+            subject_id: "subject_id",
+        });
+        expect(response).toEqual(undefined);
+    });
+
+    test("detach_contract (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/contract")
+            .respondWith()
+            .statusCode(400)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.contracts.detachContract({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("detach_contract (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/contract")
+            .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.contracts.detachContract({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("detach_contract (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/contract")
+            .respondWith()
+            .statusCode(404)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.contracts.detachContract({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.NotFoundError);
+    });
+
+    test("detach_contract (5)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/contract")
+            .respondWith()
+            .statusCode(500)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.contracts.detachContract({
                 subject_id: "subject_id",
             });
         }).rejects.toThrow(BillkitApi.InternalServerError);

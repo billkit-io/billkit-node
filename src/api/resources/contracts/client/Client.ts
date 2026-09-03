@@ -42,6 +42,7 @@ export class ContractsClient {
      * @param {ContractsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
      * @throws {@link BillkitApi.NotFoundError}
      * @throws {@link BillkitApi.UnprocessableEntityError}
      * @throws {@link BillkitApi.InternalServerError}
@@ -97,6 +98,8 @@ export class ContractsClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
                 case 404:
                     throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
                 case 422:
@@ -116,5 +119,95 @@ export class ContractsClient {
         }
 
         return handleNonStatusCodeError(_response.error, _response.rawResponse, "POST", "/contracts");
+    }
+
+    /**
+     * Clears any custom contract from the subject's existing assignment in the
+     * store and invalidates the subject's cache entries. Tenant is resolved from
+     * `X-Api-Key` via the auth middleware.
+     *
+     * - If subject_id is empty: returns 400.
+     * - If the subject has no existing assignment: returns 404.
+     * - If a store error occurs: returns 500.
+     * - On success: returns 204 No Content, whether or not a contract was
+     *   actually applied (idempotent, matching `DELETE /assignments/{subject_id}`).
+     *
+     * @param {BillkitApi.DetachContractRequest} request
+     * @param {ContractsClient.RequestOptions} requestOptions - Request-specific configuration.
+     *
+     * @throws {@link BillkitApi.BadRequestError}
+     * @throws {@link BillkitApi.UnauthorizedError}
+     * @throws {@link BillkitApi.NotFoundError}
+     * @throws {@link BillkitApi.InternalServerError}
+     * @throws {@link errors.BillkitApiError}
+     * @throws {@link errors.BillkitApiTimeoutError}
+     *
+     * @example
+     *     await client.contracts.detachContract({
+     *         subject_id: "subject_id"
+     *     })
+     */
+    public detachContract(
+        request: BillkitApi.DetachContractRequest,
+        requestOptions?: ContractsClient.RequestOptions,
+    ): core.HttpResponsePromise<void> {
+        return core.HttpResponsePromise.fromPromise(this.__detachContract(request, requestOptions));
+    }
+
+    private async __detachContract(
+        request: BillkitApi.DetachContractRequest,
+        requestOptions?: ContractsClient.RequestOptions,
+    ): Promise<core.WithRawResponse<void>> {
+        const { subject_id: subjectId } = request;
+        const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
+        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
+            _authRequest.headers,
+            this._options?.headers,
+            requestOptions?.headers,
+        );
+        const _response = await core.fetcher({
+            url: core.url.join(
+                (await core.Supplier.get(this._options.baseUrl)) ??
+                    (await core.Supplier.get(this._options.environment)),
+                `subjects/${core.url.encodePathParam(subjectId)}/contract`,
+            ),
+            method: "DELETE",
+            headers: _headers,
+            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
+            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
+            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
+            abortSignal: requestOptions?.abortSignal,
+            fetchFn: this._options?.fetch,
+            logging: this._options.logging,
+        });
+        if (_response.ok) {
+            return { data: undefined, rawResponse: _response.rawResponse };
+        }
+
+        if (_response.error.reason === "status-code") {
+            switch (_response.error.statusCode) {
+                case 400:
+                    throw new BillkitApi.BadRequestError(_response.error.body as unknown, _response.rawResponse);
+                case 401:
+                    throw new BillkitApi.UnauthorizedError(_response.error.body as unknown, _response.rawResponse);
+                case 404:
+                    throw new BillkitApi.NotFoundError(_response.error.body as unknown, _response.rawResponse);
+                case 500:
+                    throw new BillkitApi.InternalServerError(_response.error.body as unknown, _response.rawResponse);
+                default:
+                    throw new errors.BillkitApiError({
+                        statusCode: _response.error.statusCode,
+                        body: _response.error.body,
+                        rawResponse: _response.rawResponse,
+                    });
+            }
+        }
+
+        return handleNonStatusCodeError(
+            _response.error,
+            _response.rawResponse,
+            "DELETE",
+            "/subjects/{subject_id}/contract",
+        );
     }
 }

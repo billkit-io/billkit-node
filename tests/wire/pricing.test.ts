@@ -49,6 +49,19 @@ describe("PricingClient", () => {
 
         const rawResponseBody = { key: "value" };
 
+        server.mockEndpoint().get("/pricing").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.pricing.getPricing();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("get_pricing (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
         server.mockEndpoint().get("/pricing").respondWith().statusCode(404).jsonBody(rawResponseBody).build();
 
         await expect(async () => {
@@ -56,7 +69,7 @@ describe("PricingClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("get_pricing (3)", async () => {
+    test("get_pricing (4)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 

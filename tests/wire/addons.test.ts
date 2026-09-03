@@ -61,6 +61,29 @@ describe("AddonsClient", () => {
             .post("/addons")
             .jsonBody(rawRequestBody)
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.addons.attachAddon({
+                addon_key: "addon_key",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("attach_addon (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { addon_key: "addon_key", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/addons")
+            .jsonBody(rawRequestBody)
+            .respondWith()
             .statusCode(404)
             .jsonBody(rawResponseBody)
             .build();
@@ -73,7 +96,7 @@ describe("AddonsClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("attach_addon (4)", async () => {
+    test("attach_addon (5)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { addon_key: "addon_key", subject_id: "subject_id" };
@@ -96,7 +119,7 @@ describe("AddonsClient", () => {
         }).rejects.toThrow(BillkitApi.UnprocessableEntityError);
     });
 
-    test("attach_addon (5)", async () => {
+    test("attach_addon (6)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { addon_key: "addon_key", subject_id: "subject_id" };
@@ -115,6 +138,107 @@ describe("AddonsClient", () => {
             return await client.addons.attachAddon({
                 addon_key: "addon_key",
                 subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.InternalServerError);
+    });
+
+    test("detach_addon (1)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        server.mockEndpoint().delete("/subjects/subject_id/addons/addon_key").respondWith().statusCode(200).build();
+
+        const response = await client.addons.detachAddon({
+            subject_id: "subject_id",
+            addon_key: "addon_key",
+        });
+        expect(response).toEqual(undefined);
+    });
+
+    test("detach_addon (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/addons/addon_key")
+            .respondWith()
+            .statusCode(400)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.addons.detachAddon({
+                subject_id: "subject_id",
+                addon_key: "addon_key",
+            });
+        }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("detach_addon (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/addons/addon_key")
+            .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.addons.detachAddon({
+                subject_id: "subject_id",
+                addon_key: "addon_key",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("detach_addon (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/addons/addon_key")
+            .respondWith()
+            .statusCode(404)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.addons.detachAddon({
+                subject_id: "subject_id",
+                addon_key: "addon_key",
+            });
+        }).rejects.toThrow(BillkitApi.NotFoundError);
+    });
+
+    test("detach_addon (5)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/subjects/subject_id/addons/addon_key")
+            .respondWith()
+            .statusCode(500)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.addons.detachAddon({
+                subject_id: "subject_id",
+                addon_key: "addon_key",
             });
         }).rejects.toThrow(BillkitApi.InternalServerError);
     });

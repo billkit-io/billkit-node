@@ -61,6 +61,52 @@ describe("AssignmentsClient", () => {
             .post("/assignments")
             .jsonBody(rawRequestBody)
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.assignments.createAssignment({
+                plan_key: "plan_key",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("create_assignment (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/assignments")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(403)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.assignments.createAssignment({
+                plan_key: "plan_key",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.ForbiddenError);
+    });
+
+    test("create_assignment (5)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { plan_key: "plan_key", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/assignments")
+            .jsonBody(rawRequestBody)
+            .respondWith()
             .statusCode(422)
             .jsonBody(rawResponseBody)
             .build();
@@ -73,7 +119,7 @@ describe("AssignmentsClient", () => {
         }).rejects.toThrow(BillkitApi.UnprocessableEntityError);
     });
 
-    test("create_assignment (4)", async () => {
+    test("create_assignment (6)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { plan_key: "plan_key", subject_id: "subject_id" };
@@ -130,6 +176,27 @@ describe("AssignmentsClient", () => {
     });
 
     test("delete_assignment (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .delete("/assignments/subject_id")
+            .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.assignments.deleteAssignment({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("delete_assignment (4)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 

@@ -6,5 +6,9 @@ import type * as BillkitApi from "../index.js";
  * Response body for `GET /subjects`.
  */
 export interface SubjectsResponse {
+    /** Whether more results exist beyond this page. */
+    has_more: boolean;
+    /** Opaque cursor for the next page. Null/absent on the last page. */
+    next_cursor?: (string | null) | undefined;
     subjects: BillkitApi.SubjectInfo[];
 }

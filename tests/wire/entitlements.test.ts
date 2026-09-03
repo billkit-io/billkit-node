@@ -66,6 +66,52 @@ describe("EntitlementsClient", () => {
             .post("/check")
             .jsonBody(rawRequestBody)
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.entitlements.check({
+                feature_code: "feature_code",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("check (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { feature_code: "feature_code", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/check")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(402)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.entitlements.check({
+                feature_code: "feature_code",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.PaymentRequiredError);
+    });
+
+    test("check (5)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { feature_code: "feature_code", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/check")
+            .jsonBody(rawRequestBody)
+            .respondWith()
             .statusCode(404)
             .jsonBody(rawResponseBody)
             .build();
@@ -78,7 +124,53 @@ describe("EntitlementsClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("check (4)", async () => {
+    test("check (6)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { feature_code: "feature_code", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/check")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(422)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.entitlements.check({
+                feature_code: "feature_code",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnprocessableEntityError);
+    });
+
+    test("check (7)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { feature_code: "feature_code", subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/check")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(429)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.entitlements.check({
+                feature_code: "feature_code",
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.TooManyRequestsError);
+    });
+
+    test("check (8)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { feature_code: "feature_code", subject_id: "subject_id" };

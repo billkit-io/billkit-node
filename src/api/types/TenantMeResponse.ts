@@ -7,5 +7,10 @@ export interface TenantMeResponse {
     created_at: string;
     org_id: string;
     plan_key: string;
+    /**
+     * Stripe Customer ID on the platform account, if a payment method has been
+     * collected for this tenant. Absent (omitted) if none is on file.
+     */
+    stripe_customer_id?: (string | null) | undefined;
     tenant_id: string;
 }

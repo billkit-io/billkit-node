@@ -10,6 +10,8 @@ describe("SubjectsClient", () => {
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
         const rawResponseBody = {
+            has_more: true,
+            next_cursor: "next_cursor",
             subjects: [
                 {
                     addons: ["addons"],
@@ -28,6 +30,32 @@ describe("SubjectsClient", () => {
     });
 
     test("list_subjects (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/subjects").respondWith().statusCode(400).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.subjects.listSubjects();
+        }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("list_subjects (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/subjects").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.subjects.listSubjects();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("list_subjects (4)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
@@ -91,6 +119,50 @@ describe("SubjectsClient", () => {
     });
 
     test("register_subject (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/subjects")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.subjects.registerSubject({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("register_subject (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { subject_id: "subject_id" };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/subjects")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(422)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.subjects.registerSubject({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnprocessableEntityError);
+    });
+
+    test("register_subject (5)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
         const rawRequestBody = { subject_id: "subject_id" };
@@ -175,6 +247,35 @@ describe("SubjectsClient", () => {
         }).rejects.toThrow(BillkitApi.BadRequestError);
     });
 
+    test("register_subjects_batch (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+        const rawRequestBody = { subjects: [{ subject_id: "subject_id" }, { subject_id: "subject_id" }] };
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .post("/subjects/batch")
+            .jsonBody(rawRequestBody)
+            .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.subjects.registerSubjectsBatch({
+                subjects: [
+                    {
+                        subject_id: "subject_id",
+                    },
+                    {
+                        subject_id: "subject_id",
+                    },
+                ],
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
     test("get_subject (1)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
@@ -216,6 +317,27 @@ describe("SubjectsClient", () => {
             .mockEndpoint()
             .get("/subjects/subject_id")
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.subjects.getSubject({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("get_subject (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .get("/subjects/subject_id")
+            .respondWith()
             .statusCode(404)
             .jsonBody(rawResponseBody)
             .build();
@@ -227,7 +349,7 @@ describe("SubjectsClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("get_subject (3)", async () => {
+    test("get_subject (4)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 

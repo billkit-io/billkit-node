@@ -5,11 +5,78 @@ import { BillkitApiClient } from "../../src/Client";
 import { mockServerPool } from "../mock-server/MockServerPool";
 
 describe("InvoicesClient", () => {
+    test("list_invoice_failures (1)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = {
+            failures: [
+                {
+                    attempt_count: 1,
+                    error: "error",
+                    exhausted: true,
+                    first_failed_at: "first_failed_at",
+                    last_failed_at: "last_failed_at",
+                    subject_id: "subject_id",
+                    window_end: "window_end",
+                    window_start: "window_start",
+                },
+            ],
+            has_more: true,
+            next_cursor: "next_cursor",
+        };
+
+        server.mockEndpoint().get("/invoice-failures").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
+
+        const response = await client.invoices.listInvoiceFailures();
+        expect(response).toEqual(rawResponseBody);
+    });
+
+    test("list_invoice_failures (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoice-failures").respondWith().statusCode(400).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.listInvoiceFailures();
+        }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("list_invoice_failures (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoice-failures").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.listInvoiceFailures();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("list_invoice_failures (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoice-failures").respondWith().statusCode(500).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.listInvoiceFailures();
+        }).rejects.toThrow(BillkitApi.InternalServerError);
+    });
+
     test("list_invoices (1)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
         const rawResponseBody = {
+            has_more: true,
             invoices: [
                 {
                     amount_cents: 1000000,
@@ -25,7 +92,7 @@ describe("InvoicesClient", () => {
                     subject_id: "subject_id",
                 },
             ],
-            total: 1,
+            next_cursor: "next_cursor",
         };
 
         server.mockEndpoint().get("/invoices").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
@@ -40,10 +107,123 @@ describe("InvoicesClient", () => {
 
         const rawResponseBody = { key: "value" };
 
+        server.mockEndpoint().get("/invoices").respondWith().statusCode(400).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.listInvoices();
+        }).rejects.toThrow(BillkitApi.BadRequestError);
+    });
+
+    test("list_invoices (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoices").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.listInvoices();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("list_invoices (4)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
         server.mockEndpoint().get("/invoices").respondWith().statusCode(500).jsonBody(rawResponseBody).build();
 
         await expect(async () => {
             return await client.invoices.listInvoices();
+        }).rejects.toThrow(BillkitApi.InternalServerError);
+    });
+
+    test("list_platform_invoices (1)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = {
+            invoices: [
+                { amount_cents: 1000000, created_at: "created_at", id: "id", pdf_url: "pdf_url", status: "status" },
+            ],
+        };
+
+        server.mockEndpoint().get("/invoices/platform").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
+
+        const response = await client.invoices.listPlatformInvoices();
+        expect(response).toEqual(rawResponseBody);
+    });
+
+    test("list_platform_invoices (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoices/platform").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.listPlatformInvoices();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("list_platform_invoices (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoices/platform").respondWith().statusCode(500).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.listPlatformInvoices();
+        }).rejects.toThrow(BillkitApi.InternalServerError);
+    });
+
+    test("get_revenue (1)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = {
+            month_over_month: [
+                { collected_cents: 1000000, invoice_count: 1000000, month: "month", outstanding_cents: 1000000 },
+            ],
+            total_collected_cents: 1000000,
+            total_invoiced_cents: 1000000,
+            total_outstanding_cents: 1000000,
+        };
+
+        server.mockEndpoint().get("/invoices/revenue").respondWith().statusCode(200).jsonBody(rawResponseBody).build();
+
+        const response = await client.invoices.getRevenue();
+        expect(response).toEqual(rawResponseBody);
+    });
+
+    test("get_revenue (2)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoices/revenue").respondWith().statusCode(401).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.getRevenue();
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("get_revenue (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server.mockEndpoint().get("/invoices/revenue").respondWith().statusCode(500).jsonBody(rawResponseBody).build();
+
+        await expect(async () => {
+            return await client.invoices.getRevenue();
         }).rejects.toThrow(BillkitApi.InternalServerError);
     });
 
@@ -94,6 +274,27 @@ describe("InvoicesClient", () => {
             .mockEndpoint()
             .get("/invoices/subject_id/preview")
             .respondWith()
+            .statusCode(401)
+            .jsonBody(rawResponseBody)
+            .build();
+
+        await expect(async () => {
+            return await client.invoices.previewInvoice({
+                subject_id: "subject_id",
+            });
+        }).rejects.toThrow(BillkitApi.UnauthorizedError);
+    });
+
+    test("preview_invoice (3)", async () => {
+        const server = mockServerPool.createServer();
+        const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
+
+        const rawResponseBody = { key: "value" };
+
+        server
+            .mockEndpoint()
+            .get("/invoices/subject_id/preview")
+            .respondWith()
             .statusCode(404)
             .jsonBody(rawResponseBody)
             .build();
@@ -105,7 +306,7 @@ describe("InvoicesClient", () => {
         }).rejects.toThrow(BillkitApi.NotFoundError);
     });
 
-    test("preview_invoice (3)", async () => {
+    test("preview_invoice (4)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
@@ -126,7 +327,7 @@ describe("InvoicesClient", () => {
         }).rejects.toThrow(BillkitApi.UnprocessableEntityError);
     });
 
-    test("preview_invoice (4)", async () => {
+    test("preview_invoice (5)", async () => {
         const server = mockServerPool.createServer();
         const client = new BillkitApiClient({ maxRetries: 0, apiKey: "test", environment: server.baseUrl });
 
